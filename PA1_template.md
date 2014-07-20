@@ -3,7 +3,8 @@
 Reproducible Research: Peer Assessment 1
 =================================================================
 
-```{r setoptions}
+
+```r
 opts_chunk$set(echo = TRUE)
 library(reshape2)
 ```
@@ -29,23 +30,62 @@ The variables included in this dataset are:
  - interval: Identifier for the 5-minute interval in which measurement was taken
 
 We load the data from the file activity.csv (provided it is in the working directory):
-```{r}
+
+```r
 data <- read.csv("activity.csv")
 ```
 We can have a look at the loaded data set: the structure of the data frame 
-```{r}
+
+```r
 str(data)
 ```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
 and some of the first rows
-```{r}
+
+```r
 head(data)
+```
+
+```
+##   steps       date interval
+## 1    NA 2012-10-01        0
+## 2    NA 2012-10-01        5
+## 3    NA 2012-10-01       10
+## 4    NA 2012-10-01       15
+## 5    NA 2012-10-01       20
+## 6    NA 2012-10-01       25
 ```
 It seems that only the 'steps' column contains NA's, but for us to be sure of this, let's compute the number of NA's 
 presents in each column:
-```{r}
+
+```r
 sum(is.na(data$steps))
+```
+
+```
+## [1] 2304
+```
+
+```r
 sum(is.na(data$date))
+```
+
+```
+## [1] 0
+```
+
+```r
 sum(is.na(data$interval))
+```
+
+```
+## [1] 0
 ```
 So, there are no NA's in the other two columns.
 
@@ -54,7 +94,8 @@ So, there are no NA's in the other two columns.
 
 Ignoring the missing values by the moment, the following picture is an histogram
 of the total number of steps taken each day:
-```{r}
+
+```r
 data_melt <- melt(data, id = c("date", "interval"), measure.vars = "steps")
 
 steps_per_day <- dcast(data_melt, date ~ variable, sum, na.rm = TRUE)
@@ -63,22 +104,38 @@ colnames(steps_per_day) <- c("date", "total_steps")
 hist(steps_per_day$total_steps, xlab = "total number of steps per day", main = "")
 ```
 
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
+
 And below, we compute the mean and the median total number of steps taken per day:
-```{r}
+
+```r
 mean(steps_per_day$total_steps)
+```
+
+```
+## [1] 9354
+```
+
+```r
 median(steps_per_day$total_steps)
+```
+
+```
+## [1] 10395
 ```
 
 
 ## Average daily activity pattern
 
 If we average the number of steps taken in each 5-minute interval across all days
-```{r}
+
+```r
 average_steps_per_interval <- dcast(data_melt, interval ~ variable, mean, na.rm = TRUE)
 colnames(average_steps_per_interval) <- c("interval", "average_steps")
 ```
 we can plot the next series plot that shows the daily activity pattern:
-```{r}
+
+```r
 plot(average_steps_per_interval$average_steps, 
 	type = "l", 
 	xlab = "5-minute interval indexes", 
@@ -90,18 +147,41 @@ axis(side = 1,
 	labels = average_steps_per_interval$interval[ticks])
 ```
 
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8.png) 
+
 Let's order this dataframe
-```{r}
+
+```r
 averages_rank <- average_steps_per_interval[with(average_steps_per_interval, order(-average_steps)), ]
 head(averages_rank)
 ```
+
+```
+##     interval average_steps
+## 104      835         206.2
+## 105      840         195.9
+## 107      850         183.4
+## 106      845         179.6
+## 103      830         177.3
+## 101      820         171.2
+```
 Hence, the maximum number of steps, on average across all the days in the dataset, can be found in the interval
-```{r}
+
+```r
 averages_rank[1,1]
 ```
+
+```
+## [1] 835
+```
 which correspons to
-```{r}
+
+```r
 835/60
+```
+
+```
+## [1] 13.92
 ```
 13:00 p.m aproximately.
 
@@ -109,13 +189,19 @@ which correspons to
 ## Imputing missing values
 
 The total number of missing values in the dataset is
-```{r}
+
+```r
 sum(!complete.cases(data))
+```
+
+```
+## [1] 2304
 ```
 as we saw before. The presence of missing values for days/intervals may introduce bias into 
 some calculations or summaries of the data. So, we dicide to fill in all the missing values
 with the mean of the corresponding 5-minute interval. Here is the new data frame with the missing data filled in:
-```{r}
+
+```r
 full_data <- data[, 2:3]
 
 fill_steps <- function(s, i){
@@ -129,14 +215,36 @@ fill_steps <- function(s, i){
 full_data$filled_steps <- mapply(fill_steps, data$steps, data$interval)
 ```
 Take a look at it
-```{r}
+
+```r
 str(full_data)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ date        : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ interval    : int  0 5 10 15 20 25 30 35 40 45 ...
+##  $ filled_steps: num  1.717 0.3396 0.1321 0.1509 0.0755 ...
+```
+
+```r
 head(full_data)
+```
+
+```
+##         date interval filled_steps
+## 1 2012-10-01        0      1.71698
+## 2 2012-10-01        5      0.33962
+## 3 2012-10-01       10      0.13208
+## 4 2012-10-01       15      0.15094
+## 5 2012-10-01       20      0.07547
+## 6 2012-10-01       25      2.09434
 ```
 
 With this data frame, we again make an histogram of the total number of steps taken each
 day
-```{r}
+
+```r
 full_data_melt <- melt(full_data, id = c("date", "interval"), measure.vars = "filled_steps")
 
 full_steps_per_day <- dcast(full_data_melt, date ~ variable, sum, na.rm = TRUE)
@@ -145,10 +253,24 @@ colnames(full_steps_per_day) <- c("date", "total_steps")
 hist(full_steps_per_day$total_steps, xlab = "total number of steps per day", main = "")
 ```
 
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15.png) 
+
 and calculate the mean and median total number of steps taken per day:
-```{r}
+
+```r
 mean(full_steps_per_day$total_steps)
+```
+
+```
+## [1] 10766
+```
+
+```r
 median(full_steps_per_day$total_steps)
+```
+
+```
+## [1] 10766
 ```
 
 We see how these values differ from the previous one. The histogram has now a more symmetric shape and the mean and median
@@ -160,7 +282,8 @@ are basically the same value.
 We are going to create a new variable in our data frame: a factor variable with 
 levels "weekday" and "weekend" indicating whether a given date is a weekday or
 a weekend day.
-```{r}
+
+```r
 # Reformat 'date' column
 full_data$date <- as.Date(full_data[, "date"], format = "%Y-%m-%d")
 
@@ -175,10 +298,21 @@ levels(full_data$day_type)[levels(full_data$day_type)=="TRUE"] <- "weekend"
 head(full_data)
 ```
 
+```
+##         date interval filled_steps day_type
+## 1 2012-10-01        0      1.71698  weekday
+## 2 2012-10-01        5      0.33962  weekday
+## 3 2012-10-01       10      0.13208  weekday
+## 4 2012-10-01       15      0.15094  weekday
+## 5 2012-10-01       20      0.07547  weekday
+## 6 2012-10-01       25      2.09434  weekday
+```
+
 In order to plot separately the activity patterns on weekdays and weekend days,
 subset the data frame and take the average number of stpes taken in each the 5-minute interval, 
 acrros all the days in the subset:
-```{r}
+
+```r
 weekdays_data <- subset(full_data, full_data$day_type == "weekday")
 weekends_data <- subset(full_data, full_data$day_type == "weekend")
 
@@ -207,6 +341,8 @@ plot(weekends_average_steps$filled_steps,
 	xaxt = "n")
 axis(side = 1, at = ticks, labels = average_steps_per_interval$interval[ticks])
 ```
+
+![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-18.png) 
 
 So there are clearly differences between activity pattern on weekdays and activity pattern on weekends.
 For example, although the maximu activity seems to be located aproximately at the same time in both cases,
